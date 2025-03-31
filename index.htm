@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<!-- 
+ - SoniVista - Simple Image to Audio Converter
+ - Copyright (C) 2025 BlipCodeLab / @ilbpedro
+ - 
+ - This program is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU General Public License as published by
+ - the Free Software Foundation, version 3 of the License.
+ - 
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ - GNU General Public License for more details.
+ - 
+ - You should have received a copy of the GNU General Public License
+ - along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+ 
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+	<meta name="format-detection" content="telephone=no">
+	<meta name="msapplication-tap-highlight" content="no">
+	<meta name="theme-color" content="#000000">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data: content:;">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Expires" content="0">
+	<meta name="description" content="SoniVista v0.9">
+	<meta name="license" content="GPL-3.0-only">
+	<meta name="author" content="BlipCodeLab/@ilbpedro">
+	<meta name="copyright" content="2025 (C) @ilbpedro/BlipCodeLab">
+
+    <title>Image to audio converter (SoniVista v0.9)</title>
+	<link rel="stylesheet" href="style/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>SoniVista v0.9</h1>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <label for="imageInput">Select an image file:</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div class="control-group">
+                <label for="brightnessThreshold">Brightness Threshold (0-255): <span id="brightnessThresholdValue">50</span></label>
+                <input type="range" id="brightnessThreshold" min="0" max="255" value="50">
+            </div>
+
+			<div class="control-group">
+				<label>
+					<input type="checkbox" id="dynamicRangeToggle"> Use Dynamic Range (dB) control
+				</label>
+			</div>
+			<div class="control-group" id="dynamicRangeControl" style="display: none;">
+				<label for="dynamicRange">Dynamic Range (dB): <span id="dynamicRangeValue">24</span></label>
+				<input type="range" id="dynamicRange" min="6" max="60" step="1" value="24">
+			</div>
+
+            <div class="control-group">
+                <label for="duration">Audio Duration (seconds): <span id="durationValue">5.0</span></label>
+                <input type="range" id="duration" min="0.1" max="10" step="0.1" value="5.0">
+            </div>
+
+            <div class="control-group">
+                <label for="frequencyShift">Transposition (Hz): <span id="frequencyShiftValue">0</span></label>
+                <input type="range" id="frequencyShift" min="-10000" max="10000" step="100" value="0">
+            </div>
+
+            <button id="convertBtn">Convert to WAV</button>
+            <div id="loading" class="loading">Processing... This may take a few seconds for large images.</div>
+        </div>
+        
+        <div class="preview">
+            <div class="preview-item">
+                <h3>Original image</h3>
+                <canvas id="imageCanvas"></canvas>
+            </div>
+            <div class="preview-item">
+                <h3>Preview Spectrogram (linear scale)</h3>
+                <canvas id="spectrogramPreviewCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Audio generated from the image:</h3>
+            <audio id="audioPlayer" controls></audio>
+            <button id="downloadBtn" disabled>Download WAV</button>
+        </div>
+    </div>
+
+	<script type="text/javascript" src="script/script.js"></script>
+	
+	<footer style="text-align: center; margin-top: 2rem; padding: 1rem; background: #f5f5f5;">
+		<div style="max-width: 800px; margin: 0 auto;">
+			<p>
+				SoniVista - Free Software under <a href="https://www.gnu.org/licenses/gpl-3.0.html" 
+				target="_blank" rel="noopener noreferrer">GNU General Public License v3.0</a>
+			</p>
+			<p>
+				<small>
+					Copyright © 2025 @ilbpedro/BlipCodeLab<br>
+					This program comes with ABSOLUTELY NO WARRANTY.
+					This is free software, and you are welcome to redistribute it
+					under certain conditions. See the 
+					<a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank">full license</a> for details.
+				</small>
+			</p>
+		</div>
+	</footer>
+</body>
+</html>
