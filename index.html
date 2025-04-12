@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+
+<!--
+ - SoniVista v0.9 - Simple Image to Audio Converter
+ - Copyright (C) 2025 BlipCodeLab / @ilbpedro
+ -
+ - This program is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU General Public License as published by
+ - the Free Software Foundation, version 3 of the License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ - GNU General Public License for more details.
+ -
+ - You should have received a copy of the GNU General Public License
+ - along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+		<meta name="format-detection" content="telephone=no">
+		<meta name="theme-color" content="#000000">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'">
+		<meta name="description" content="SoniVista v0.9">
+		<meta name="license" content="GPL-3.0-only">
+		<meta name="author" content="BlipCodeLab/@ilbpedro">
+		<meta name="copyright" content="2025 (C) @ilbpedro/BlipCodeLab">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="msapplication-TileColor" content="#000000">
+		<meta name="msapplication-tap-highlight" content="no">
+
+		<base href="/">
+		<title> SoniVista v0.9 - Image to audio converter </title>
+
+		<!-- <link rel="stylesheet" href="style.css"> -->
+		<style>
+			:root {
+				--safe-area-top: env(safe-area-inset-top, 0px);
+				--safe-area-right: env(safe-area-inset-right, 0px);
+				--safe-area-bottom: env(safe-area-inset-bottom, 0px);
+				--safe-area-left: env(safe-area-inset-left, 0px);
+			}
+
+			* {
+				box-sizing: border-box;
+				-webkit-tap-highlight-color: transparent;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+
+			html, body {
+				width: 100%;
+				min-height: 100vh;
+				min-height: -webkit-fill-available;
+				margin: 0;
+				padding: 0;
+				overflow-x: hidden;
+				touch-action: manipulation;
+			}
+
+			.fullscreen-section {
+				height: calc(var(--vh, 1vh) * 100);
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+				background-color: #f5f5f5;
+				padding: calc(20px + var(--safe-area-top)) calc(20px + var(--safe-area-right)) 
+						 calc(20px + var(--safe-area-bottom)) calc(20px + var(--safe-area-left));
+				display: flex;
+				flex-direction: column;
+				line-height: 1.5;
+			}
+
+			.container {
+				background-color: white;
+				padding: 20px;
+				border-radius: 10px;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+				width: 100%;
+				max-width: 800px;
+				margin: 0 auto;
+				flex: 1;
+			}
+
+			.control-panel {
+				margin: 20px 0;
+				padding: 15px;
+				background-color: #f0f0f0;
+				border-radius: 5px;
+			}
+
+			.control-group {
+				margin-bottom: 15px;
+			}
+
+			label {
+				display: block;
+				margin-bottom: 5px;
+				font-weight: bold;
+			}
+
+			input[type="range"], 
+			input[type="number"] {
+				width: 100%;
+				max-width: 300px;
+				-webkit-appearance: none;
+				height: 8px;
+				background: #909090;
+				border-radius: 4px;
+				margin: 10px 0;
+			}
+
+			input[type="range"]::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 20px;
+				height: 20px;
+				background: #4caf50;
+				border-radius: 50%;
+				cursor: pointer;
+			}
+
+			button {
+				background-color: #4caf50;
+				color: white;
+				border: none;
+				padding: 12px 20px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 16px;
+				transition: background-color 0.3s;
+				user-select: none;
+				-webkit-user-select: none;
+			}
+
+			button:hover, button:active {
+				background-color: #45a049;
+			}
+
+			canvas, audio {
+				width: 100%;
+				max-width: 100%;
+				display: block;
+			}
+
+			canvas {
+				border: 1px solid #d0d0d0;
+				margin: 10px 0;
+				background-color: #f0f0f0;
+			}
+
+			#spectrogramPreviewCanvas {
+				max-height: 300px;
+				image-rendering: -moz-crisp-edges;
+				image-rendering: pixelated;
+				image-rendering: crisp-edges;
+			}
+
+			.preview {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 20px;
+				margin: 20px 0;
+			}
+
+			.preview-item {
+				flex: 1;
+				min-width: 250px;
+			}
+
+			/* iOS settings*/
+			@supports (-webkit-touch-callout: none) {
+				body {
+					padding-bottom: calc(20px + var(--safe-area-bottom) + 20px);
+				}
+
+				button {
+					padding: 15px 20px;
+				}
+			}
+
+			/* media queries for different screen sizes */
+			@media (max-width: 600px) {
+				body {
+					padding: 10px;
+				}
+
+				.container {
+					padding: 15px;
+				}
+
+				.preview-item {
+					min-width: 100%;
+				}
+			}
+
+			@media (hover: hover) {
+				button:hover {
+					background-color: #3d8b40;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>SoniVista v0.9</h1>
+
+			<div class="control-panel">
+				<div class="control-group">
+					<label for="imageInput">Select an image file:</label>
+					<input type="file" id="imageInput" accept="image/*">
+				</div>
+
+				<div class="control-group">
+					<label for="brightnessThreshold">Brightness Threshold (0-255): <span id="brightnessThresholdValue">50</span></label>
+					<input type="range" id="brightnessThreshold" min="0" max="255" value="50">
+				</div>
+
+				<div class="control-group">
+					<label>
+						<input type="checkbox" id="dynamicRangeToggle"> Use Dynamic Range (dB) control
+					</label>
+				</div>
+				<div class="control-group" id="dynamicRangeControl" style="display: none;">
+					<label for="dynamicRange">Dynamic Range (dB): <span id="dynamicRangeValue">24</span></label>
+					<input type="range" id="dynamicRange" min="6" max="60" step="1" value="24">
+				</div>
+
+				<div class="control-group">
+					<label for="duration">Audio Duration (seconds): <span id="durationValue">5.0</span></label>
+					<input type="range" id="duration" min="0.1" max="10" step="0.1" value="5.0">
+				</div>
+
+				<div class="control-group">
+					<label for="frequencyShift">Transposition (Hz): <span id="frequencyShiftValue">0</span></label>
+					<input type="range" id="frequencyShift" min="-10000" max="10000" step="100" value="0">
+				</div>
+
+				<button id="convertBtn">Convert to WAV</button>
+				<div id="loading" class="loading" style="display: none;">Processing... This may take a few seconds for large images.</div>
+			</div>
+
+			<div class="preview">
+				<div class="preview-item">
+					<h3>Original image</h3>
+					<canvas id="imageCanvas"></canvas>
+				</div>
+				<div class="preview-item">
+					<h3>Preview Spectrogram (linear scale)</h3>
+					<canvas id="spectrogramPreviewCanvas"></canvas>
+				</div>
+			</div>
+
+			<div class="control-group">
+				<h3>Audio generated from the image:</h3>
+				<audio id="audioPlayer" controls></audio>
+				<button id="downloadBtn" disabled>Download WAV</button>
+			</div>
+		</div>
+
+		<!-- <script src="script.js"></script> -->
+		<script>
+			/*
+			 * SoniVista v0.9 - Simple Image to Audio Converter
+			 * Copyright (C) 2025 BlipCodeLab / @ilbpedro
+			 *
+			 * This program is free software: you can redistribute it and/or modify
+			 * it under the terms of the GNU General Public License as published by
+			 * the Free Software Foundation, version 3 of the License.
+			 * 
+			 * This program is distributed in the hope that it will be useful,
+			 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+			 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+			 * GNU General Public License for more details.
+			 *
+			 * You should have received a copy of the GNU General Public License
+			 * along with this program. If not, see <https://www.gnu.org/licenses/>.
+			*/
+
+			const elements = {
+				imageInput: document.getElementById('imageInput'),
+				duration: document.getElementById('duration'),
+				durationValue: document.getElementById('durationValue'),
+				brightnessThreshold: document.getElementById('brightnessThreshold'),
+				brightnessThresholdValue: document.getElementById('brightnessThresholdValue'),
+				dynamicRangeToggle: document.getElementById('dynamicRangeToggle'),
+				dynamicRange: document.getElementById('dynamicRange'),
+				dynamicRangeValue: document.getElementById('dynamicRangeValue'),
+				dynamicRangeControl: document.getElementById('dynamicRangeControl'),
+				convertBtn: document.getElementById('convertBtn'),
+				downloadBtn: document.getElementById('downloadBtn'),
+				imageCanvas: document.getElementById('imageCanvas'),
+				imageCtx: document.getElementById('imageCanvas').getContext('2d'),
+				spectrogramPreviewCanvas: document.getElementById('spectrogramPreviewCanvas'),
+				spectrogramPreviewCtx: document.getElementById('spectrogramPreviewCanvas').getContext('2d'),
+				audioPlayer: document.getElementById('audioPlayer'),
+				loading: document.getElementById('loading'),
+				frequencyShift: document.getElementById('frequencyShift'),
+				frequencyShiftValue: document.getElementById('frequencyShiftValue')
+			};
+
+			// SETTINGS (default/initial values)
+			const config = {
+				brightnessThreshold: 50,
+				duration: 5.0,
+				frequencyShift: 0,
+				sampleRate: 44100, // sample rate: 11025, 22050, 24000, 44100, 48000, 88200, 96000, 176400, 192000 Hz
+				bitDepth: 16,      // bit depth: 8, 12, 16, 24, 32 bits
+				baseFrequency: 20, // base frequency (hz)
+				get frequencySpan() { return Math.max(20, (this.sampleRate/2) - this.baseFrequency); }, // freq. interval (hz)
+				useDynamicRange: false, // dynamicRange disabled by default
+				dynamicRange: 24,  // (6–12 dB) more uniform audio (little variation. ideal for images with smooth tones)
+								   // (18–24 dB) balanced (natural dynamics. good for most cases)
+								   // (30–48 dB) high dynamic range (sharp contrast. useful for crisp black and white images)
+								   // (> 48 dB) extreme effect (may overemphasize small variations)
+				fftSize: 512       // preview spectrogram resolution
+			};
+
+			let currentImageData = null; // stores current image data
+
+			function debounce(func, wait) {
+				let timeout;
+				return function() {
+					const context = this, args = arguments;
+					clearTimeout(timeout);
+					timeout = setTimeout(() => {
+						func.apply(context, args);
+					}, wait);
+				};
+			}
+
+			function writeString(view, offset, string) {
+				for (let i = 0; i < string.length; i++) {
+					view.setUint8(offset + i, string.charCodeAt(i));
+				}
+			}
+
+			function setupControlListeners() {
+				const updatePreview = debounce(() => {
+					if (elements.imageInput.files[0] && currentImageData) {
+						drawSpectrogramPreview(currentImageData);
+					}
+				}, 200);
+
+				elements.duration.addEventListener('input', () => {
+					elements.durationValue.textContent = elements.duration.value;
+					config.duration = parseFloat(elements.duration.value);
+					updatePreview();
+				});
+
+				elements.brightnessThreshold.addEventListener('input', () => {
+					elements.brightnessThresholdValue.textContent = elements.brightnessThreshold.value;
+					config.brightnessThreshold = parseInt(elements.brightnessThreshold.value);
+					updatePreview();
+				});
+
+				elements.frequencyShift.addEventListener('input', () => {
+					elements.frequencyShiftValue.textContent = elements.frequencyShift.value;
+					config.frequencyShift = parseInt(elements.frequencyShift.value);
+					updatePreview();
+				});
+
+				elements.dynamicRangeToggle.addEventListener('change', function() {
+					config.useDynamicRange = this.checked;
+					elements.dynamicRangeControl.style.display = this.checked ? 'block' : 'none';
+					if (currentImageData) {
+						drawSpectrogramPreview(currentImageData);
+					}
+				});
+
+				elements.dynamicRange.addEventListener('input', function() {
+					elements.dynamicRangeValue.textContent = this.value;
+					config.dynamicRange = parseInt(this.value);
+					if (config.useDynamicRange && currentImageData) {
+						drawSpectrogramPreview(currentImageData);
+					}
+				});
+				
+			}
+
+			// processes image file
+			elements.imageInput.addEventListener('change', function(e) {
+				const file = e.target.files[0];
+				if (!file) return;
+
+				const reader = new FileReader();
+				reader.onload = function(event) {
+					const img = new Image();
+					img.onload = function() {
+						try {
+							// sets recommended maximum size
+							const MAX_WIDTH = 1024;
+							const MAX_HEIGHT = 512;
+							const TARGET_WIDTH = 512;
+							const TARGET_HEIGHT = 256;
+							
+							// checks and resizes if needed
+							if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
+								console.warn(`Big image! (${img.width}x${img.height}). Resized to ${TARGET_WIDTH}x${TARGET_HEIGHT}...`);
+								
+								// creates canvas for resizing
+								const tempCanvas = document.createElement('canvas');
+								tempCanvas.width = TARGET_WIDTH;
+								tempCanvas.height = TARGET_HEIGHT;
+								const ctx = tempCanvas.getContext('2d');
+								
+								// maintains original aspect ratio
+								const ratio = Math.min(
+									TARGET_WIDTH / img.width,
+									TARGET_HEIGHT / img.height
+								);
+								const newWidth = Math.floor(img.width * ratio);
+								const newHeight = Math.floor(img.height * ratio);
+								
+								// centers image on canvas
+								const offsetX = (TARGET_WIDTH - newWidth) / 2;
+								const offsetY = (TARGET_HEIGHT - newHeight) / 2;
+
+								ctx.drawImage(img, offsetX, offsetY, newWidth, newHeight); // draws resized image
+
+								// replaces original image with resized version
+								img.width = TARGET_WIDTH;
+								img.height = TARGET_HEIGHT;
+								img.src = tempCanvas.toDataURL('image/png');
+								
+								// alert(`Image optimized to ${newWidth}x${newHeight}px for better preview.`);
+							}
+							
+							// processes image (original or resized)
+							currentImageData = processImageData(img);
+							displayImage(currentImageData);
+							drawSpectrogramPreview(currentImageData);
+							
+						} catch (error) {
+							alert('Error processing image: ' + error.message);
+							console.error(error);
+						}
+					};
+					img.onerror = function() {
+						alert('Error loading image. Use PNG, JPEG or BMP formats.');
+					};
+					img.src = event.target.result;
+				};
+				reader.onerror = function() {
+					alert('Error reading image file.');
+				};
+				reader.readAsDataURL(file);
+			});
+
+			elements.convertBtn.addEventListener('click', async () => {
+				if (!elements.imageInput.files[0]) {
+					alert('Please, select an image first');
+					return;
+				}
+				
+				elements.loading.style.display = 'block';
+				elements.convertBtn.disabled = true;
+				
+				try {
+					const file = elements.imageInput.files[0];
+					const img = await loadImage(file);
+					const imageData = processImageData(img);
+					const audioData = await processImageToAudio(imageData);
+					const wavBlob = createWavBlob(audioData);
+					
+					const url = URL.createObjectURL(wavBlob);
+					elements.audioPlayer.src = url;
+					elements.downloadBtn.disabled = false;
+					
+					elements.downloadBtn.onclick = () => {
+						const a = document.createElement('a');
+						a.href = url;
+						a.download = 'output.wav';
+						a.click();
+					};
+				} catch (error) {
+					alert('Error converting image: ' + error.message);
+					console.error(error);
+				} finally {
+					elements.loading.style.display = 'none';
+					elements.convertBtn.disabled = false;
+				}
+			});
+
+			document.addEventListener('DOMContentLoaded', function() {
+				setupControlListeners();
+				adjustViewport();
+				handleOrientationChange();
+				
+				window.addEventListener('resize', adjustViewport);
+				window.addEventListener('orientationchange', handleOrientationChange);
+
+				document.querySelectorAll('input, textarea, select').forEach(el => {
+					el.addEventListener('focus', () => {
+						setTimeout(() => {
+							el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						}, 300);
+					});
+				});
+			});
+
+			// loads image
+			function loadImage(file) {
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = (event) => {
+						const img = new Image();
+						img.onload = () => {
+							const MAX_SIZE = 1024;
+							let width = img.width;
+							let height = img.height;
+
+							if (width > MAX_SIZE || height > MAX_SIZE) {
+								const ratio = MAX_SIZE / Math.max(width, height);
+								width = Math.round(width * ratio);
+								height = Math.round(height * ratio);
+
+								const canvas = document.createElement('canvas');
+								canvas.width = width;
+								canvas.height = height;
+								const ctx = canvas.getContext('2d');
+								ctx.drawImage(img, 0, 0, width, height);
+
+								const resizedImg = new Image();
+								resizedImg.onload = () => resolve(resizedImg);
+								resizedImg.onerror = reject;
+								resizedImg.src = canvas.toDataURL('image/png');
+							} else {
+								resolve(img); // else, use original image size
+							}
+						};
+						img.onerror = reject;
+						img.src = event.target.result;
+					};
+					reader.onerror = reject;
+					reader.readAsDataURL(file);
+				});
+			}
+
+			// adjusts viewport for mobile devices
+			function adjustViewport() {
+				if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+					document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+					
+					// hides address bar (Android)
+					window.addEventListener('load', function() {
+						setTimeout(function() {
+							window.scrollTo(0, 1);
+						}, 0);
+					});
+				}
+			}
+
+			// detects screen orientation changes
+			function handleOrientationChange() {
+				const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+				document.body.classList.toggle('portrait', isPortrait);
+				document.body.classList.toggle('landscape', !isPortrait);
+			}
+
+			// analyzes image file
+			function processImageData(img) {
+				const canvas = document.createElement('canvas');
+				canvas.width = img.width;
+				canvas.height = img.height;
+				const ctx = canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0);
+				
+				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				const pixels = new Uint8Array(img.width * img.height * 3);
+				
+				for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
+					pixels[j] = imageData.data[i];
+					pixels[j + 1] = imageData.data[i + 1];
+					pixels[j + 2] = imageData.data[i + 2];
+				}
+				
+				return {
+					width: img.width,
+					height: img.height,
+					pixels: pixels
+				};
+			}
+
+			// displays image on canvas
+			function displayImage(imageData) {
+				// adjusts canvas size to maintain image proportions
+				const maxWidth = 400;
+				const maxHeight = 400;
+				
+				let displayWidth = imageData.width;
+				let displayHeight = imageData.height;
+				
+				if (displayWidth > maxWidth || displayHeight > maxHeight) {
+					const ratio = Math.min(maxWidth / displayWidth, maxHeight / displayHeight);
+					displayWidth = Math.floor(displayWidth * ratio);
+					displayHeight = Math.floor(displayHeight * ratio);
+				}
+				
+				elements.imageCanvas.width = displayWidth;
+				elements.imageCanvas.height = displayHeight;
+				
+				// creates 'ImageData' with display size
+				const displayImageData = elements.imageCtx.createImageData(displayWidth, displayHeight);
+				
+				// resizes image while maintaining proportions
+				const xRatio = imageData.width / displayWidth;
+				const yRatio = imageData.height / displayHeight;
+				
+				for (let y = 0; y < displayHeight; y++) {
+					for (let x = 0; x < displayWidth; x++) {
+						const srcX = Math.floor(x * xRatio);
+						const srcY = Math.floor(y * yRatio);
+						
+						const srcIdx = (srcY * imageData.width + srcX) * 3;
+						const dstIdx = (y * displayWidth + x) * 4;
+						
+						displayImageData.data[dstIdx] = imageData.pixels[srcIdx];
+						displayImageData.data[dstIdx + 1] = imageData.pixels[srcIdx + 1];
+						displayImageData.data[dstIdx + 2] = imageData.pixels[srcIdx + 2];
+						displayImageData.data[dstIdx + 3] = 255;
+					}
+				}
+				
+				elements.imageCtx.putImageData(displayImageData, 0, 0);
+			}
+
+			// draws spectrogram preview
+			function drawSpectrogramPreview(imageData) {
+				const fftSize = config.fftSize;
+				const maxFreq = config.baseFrequency + config.frequencySpan;
+				
+				// fixed width for preview
+				const targetWidth = Math.min(800, imageData.width);
+				const canvasHeight = Math.min(fftSize/2, 400);
+				
+				// configures canvas
+				elements.spectrogramPreviewCanvas.width = targetWidth;
+				elements.spectrogramPreviewCanvas.height = canvasHeight;
+				
+				// creates 'ImageData' for spectrogram
+				const imageDataObj = elements.spectrogramPreviewCtx.createImageData(targetWidth, canvasHeight);
+				
+				
+				const durationScale = config.duration / 5.0; // scale factor based on duration
+				
+				// creates spectrogram representation
+				const spectrogramData = new Array(targetWidth);
+				for (let x = 0; x < targetWidth; x++) {
+					spectrogramData[x] = new Array(canvasHeight).fill(0);
+					
+					// calculates original position while maintaining centering
+					const normalizedPos = (x - targetWidth/2) / durationScale + imageData.width/2;
+					let srcX = Math.floor(normalizedPos);
+					
+					// ensures it's within image boundaries
+					srcX = Math.max(0, Math.min(imageData.width - 1, srcX));
+					
+					for (let y = 0; y < imageData.height; y++) {
+						const srcIdx = (y * imageData.width + srcX) * 3;
+						const brightness = (imageData.pixels[srcIdx] + 
+										  imageData.pixels[srcIdx+1] + 
+										  imageData.pixels[srcIdx+2]) / 3;
+						
+						if (brightness >= config.brightnessThreshold) {
+							const freq = config.baseFrequency + config.frequencyShift + 
+										 (imageData.height - 1 - y) * (config.frequencySpan / imageData.height);
+							const bin = Math.floor((freq / maxFreq) * canvasHeight);
+							
+							if (bin >= 0 && bin < canvasHeight) {
+								spectrogramData[x][bin] = Math.max(spectrogramData[x][bin], brightness / 255);
+							}
+						}
+					}
+				}
+				
+				// fills with black background
+				for (let i = 0; i < imageDataObj.data.length; i += 4) {
+					imageDataObj.data[i] = 0;
+					imageDataObj.data[i+1] = 0;
+					imageDataObj.data[i+2] = 0;
+					imageDataObj.data[i+3] = 255;
+				}
+				
+				for (let x = 0; x < targetWidth; x++) {
+					for (let y = 0; y < canvasHeight; y++) {
+						const displayY = canvasHeight - 1 - y;
+						const idx = (displayY * targetWidth + x) * 4;
+						const rawIntensity = spectrogramData[x][y];
+						
+						if (rawIntensity > 0) {
+							let displayIntensity;
+							
+							if (config.useDynamicRange) {
+								// dynamic range mode
+								const dbRange = config.dynamicRange;
+								const minDb = -dbRange;
+								const safeIntensity = Math.max(1e-6, rawIntensity);
+								const intensityDb = 20 * Math.log10(safeIntensity);
+								displayIntensity = (Math.max(minDb, intensityDb) - minDb) / dbRange;
+							} else {
+								// original mode (better resolution??)
+								displayIntensity = rawIntensity;
+							}
+							
+							const color = getColor(displayIntensity);
+							imageDataObj.data[idx] = color[0];
+							imageDataObj.data[idx+1] = color[1];
+							imageDataObj.data[idx+2] = color[2];
+						}
+					}
+				}
+				
+				elements.spectrogramPreviewCtx.putImageData(imageDataObj, 0, 0);
+			}
+
+			// inferno colormap (simplified, 16 colors)
+			function getColor(intensity) {
+				const colormap = [
+					// deep blues/blacks (dark start)
+					[0, 0, 3],       s// Near-black (cool blue undertone)
+					
+					// purple transition (low intensities)
+					[20, 11, 53],    // Dark purple
+					[46, 9, 93],     // Medium purple (more blue)s
+					[84, 14, 131],   // Soft violet (warmer)
+					
+					// magenta/red phase (mid intensities)
+					[114, 25, 147],  // Rich magenta
+					[140, 35, 156],  // Reddish-magenta
+					[165, 44, 160],  // Deep crimson
+					
+					// orange transition (mid-high intensities)
+					[188, 52, 161],  // Burnt orange
+					[210, 60, 159],  // Vibrant orange
+					[230, 69, 154],  // Bright orange (yellow tint)
+					
+					// yellow/white phase (high intensities)
+					[245, 78, 148],  // Golden yellow
+					[253, 85, 142],  // Lemon yellow
+					[255, 102, 127], // Light yellow (almost pastel)
+					[255, 136, 90],  // Pale yellow (near-white)
+					[255, 182, 35],  // Off-white (warm glow)
+					[255, 255, 0]    // Pure yellow (peak intensity)
+				];
+
+				//const index = Math.min(colormap.length - 1, Math.floor(intensity * colormap.length));
+				//return colormap[index];
+				
+				const position = intensity * (colormap.length - 1);
+				const index1 = Math.floor(position);
+				const index2 = Math.min(index1 + 1, colormap.length - 1);
+				const frac = position - index1;
+
+				// linear interpolation between adjacent colors (between colormap points)
+				const color1 = colormap[index1];
+				const color2 = colormap[index2];
+				return [
+					Math.round(color1[0] + frac * (color2[0] - color1[0])),
+					Math.round(color1[1] + frac * (color2[1] - color1[1])),
+					Math.round(color1[2] + frac * (color2[2] - color1[2]))
+				];
+			}
+
+			// processes image to audio
+			async function processImageToAudio(imageData) {
+				const totalSamples = Math.floor(config.sampleRate * config.duration);
+				const audioData = new Float32Array(totalSamples);
+
+				// pre-process pixel brightness
+				const brightnessData = new Array(imageData.height);
+				for (let y = 0; y < imageData.height; y++) {
+					brightnessData[y] = new Array(imageData.width);
+					for (let x = 0; x < imageData.width; x++) {
+						const idx = (y * imageData.width + x) * 3;
+						brightnessData[y][x] = (imageData.pixels[idx] + 
+											  imageData.pixels[idx + 1] + 
+											  imageData.pixels[idx + 2]) / 3;
+					}
+				}
+				
+				// determines encoding parameters
+				const timePerLine = config.duration / imageData.width;
+				const freqPerPixel = config.frequencySpan / imageData.height;
+				const baseFreq = config.baseFrequency + config.frequencyShift;
+				
+				// HORIZONTAL ENCODING: each column = moment in time, each row = frequency
+				for (let x = 0; x < imageData.width; x++) {
+					const startTime = x * timePerLine;
+					const endTime = (x + 1) * timePerLine;
+					const startSample = Math.floor(startTime * config.sampleRate);
+					const endSample = Math.min(totalSamples, Math.floor(endTime * config.sampleRate));
+					
+					for (let y = 0; y < imageData.height; y++) {
+						const brightness = brightnessData[y][x];
+						if (brightness < config.brightnessThreshold) continue;
+						
+						const freq = baseFreq + (imageData.height - 1 - y) * freqPerPixel;
+						const amplitude = brightness / 255;
+						
+						for (let i = startSample; i < endSample; i++) {
+							const t = i / config.sampleRate;
+							audioData[i] += amplitude * Math.sin(2 * Math.PI * freq * t);
+						}
+					}
+				}
+				
+				normalizeAudio(audioData);
+				
+				return audioData;
+			}
+
+			// normalizes audio to prevent clipping
+			function normalizeAudio(audioData) {
+				let maxAmplitude = 0;
+				for (let i = 0; i < audioData.length; i++) {
+					maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[i]));
+				}
+				
+				if (maxAmplitude > 0) {
+					if (config.useDynamicRange) { // dynamic range mode
+						const scale = (10 ** (config.dynamicRange / 20)) / maxAmplitude;
+						const minAmplitude = scale * (10 ** (-config.dynamicRange / 20));
+						
+						for (let i = 0; i < audioData.length; i++) {
+							const sign = Math.sign(audioData[i]);
+							audioData[i] = sign * Math.max(minAmplitude, Math.abs(audioData[i]) * scale);
+						}
+					} else { // original mode
+						const scale = 0.8 / maxAmplitude;
+						for (let i = 0; i < audioData.length; i++) {
+							audioData[i] *= scale;
+						}
+					}
+				}
+			}
+
+			// creates .wav file
+			function createWavBlob(audioData) {
+				const numChannels = 1;
+				const bitsPerSample = config.bitDepth;
+				
+				// converts float32 to selected bit format
+				let audioView;
+				if(config.bitDepth === 8) {
+					const int8Data = new Uint8Array(audioData.length);
+					for (let i = 0; i < audioData.length; i++) {
+						int8Data[i] = Math.max(0, Math.min(255, Math.floor((audioData[i] + 1) * 127.5)));
+					}
+					audioView = int8Data;
+				} else if(config.bitDepth === 16) {
+					const int16Data = new Int16Array(audioData.length);
+					for (let i = 0; i < audioData.length; i++) {
+						int16Data[i] = Math.max(-32768, Math.min(32767, audioData[i] * 32767));
+					}
+					audioView = int16Data;
+				} else if(config.bitDepth === 24) {
+					// 24-bit implementation (requires special handling)
+					const buffer = new ArrayBuffer(audioData.length * 3);
+					const view = new DataView(buffer);
+					for (let i = 0; i < audioData.length; i++) {
+						const sample = Math.max(-8388608, Math.min(8388607, audioData[i] * 8388607));
+						view.setInt24(i * 3, sample, true);
+					}
+					audioView = buffer;
+				} else if(config.bitDepth === 32) {
+					const int32Data = new Int32Array(audioData.length);
+					for (let i = 0; i < audioData.length; i++) {
+						int32Data[i] = Math.max(-2147483648, Math.min(2147483647, audioData[i] * 2147483647));
+					}
+					audioView = int32Data;
+				}
+
+				const byteRate = config.sampleRate * numChannels * bitsPerSample / 8;
+				const blockAlign = numChannels * bitsPerSample / 8;
+				const subChunk2Size = audioData.length * numChannels * bitsPerSample / 8;
+				
+				// creates .wav buffer
+				const buffer = new ArrayBuffer(44 + subChunk2Size);
+				const view = new DataView(buffer);
+				
+				// .wav header
+				writeString(view, 0, 'RIFF');                // writes the ASCII string "RIFF" at position 0 in the DataView
+				view.setUint32(4, 36 + subChunk2Size, true); // sets a 32-bit unsigned integer at position 4, (total file size minus 8 bytes)
+				writeString(view, 8, 'WAVE');                // writes 'WAVE' at position 8, indicating it's a WAV audio file (a subtype of RIFF)
+				writeString(view, 12, 'fmt ');               // writes 'fmt ' (with a space) at position 12, marking the format subchunk
+				view.setUint32(16, 16, true);                // sets the size of 'fmt ' subchunk to 16 bytes (standard for PCM audio)
+				view.setUint16(20, 1, true);                 // sets the audio format to 1 (PCM/uncompressed audio)
+				view.setUint16(22, numChannels, true);       // sets the number of audio channels
+				view.setUint32(24, config.sampleRate, true); // sets the sample rate in Hz
+				view.setUint32(28, byteRate, true);          // sets the byte rate (bytes per second)
+				view.setUint16(32, blockAlign, true);        // sets the block alignment (bytes per sample for all channels)
+				view.setUint16(34, bitsPerSample, true);     // sets the bits per sample
+				writeString(view, 36, 'data');               // writes 'data' at position 36, marking the start of the audio data subchunk
+				view.setUint32(40, subChunk2Size, true);     // sets the size of the audio data in bytes
+				
+				// writes audio data
+				if(config.bitDepth === 8) {
+					new Uint8Array(buffer, 44).set(audioView);
+				} else if(config.bitDepth === 16) {
+					new Int16Array(buffer, 44).set(audioView);
+				} else if(config.bitDepth === 24) {
+					// special implementation for 24-bit
+					new Uint8Array(buffer, 44).set(new Uint8Array(audioView));
+				} else if(config.bitDepth === 32) {
+					new Int32Array(buffer, 44).set(audioView);
+				}
+				
+				return new Blob([view], { type: 'audio/wav' });
+			}
+
+			// helper for writing 24-bit integers
+			DataView.prototype.setInt24 = function(pos, val, littleEndian) {
+				this.setUint8(pos, val & 0xff);
+				this.setUint8(pos + 1, (val >> 8) & 0xff);
+				this.setUint8(pos + 2, (val >> 16) & 0xff);
+			};
+		</script>
+		
+		<footer style="text-align: center; margin-top: 2rem; padding: 1rem; background: #f5f5f5;">
+			<div style="max-width: 800px; margin: 0 auto;">
+				<p>
+					SoniVista - Free Software under <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GNU General Public License v3.0</a>
+				</p>
+				<p>
+					<small>
+						Copyright © 2025 @ilbpedro/BlipCodeLab<br>
+						This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under certain conditions. See the 
+						<a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank">full license</a> for details.
+					</small>
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>
