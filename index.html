@@ -20,9 +20,8 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 		<meta name="format-detection" content="telephone=no">
-		<meta name="theme-color" content="#000000">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'">
 		<meta name="description" content="SoniVista v0.9">
@@ -55,8 +54,8 @@
 
 			html, body {
 				width: 100%;
-				min-height: 100vh;
 				min-height: -webkit-fill-available;
+				min-height: 100vh;
 				margin: 0;
 				padding: 0;
 				overflow-x: hidden;
@@ -134,8 +133,8 @@
 				cursor: pointer;
 				font-size: 16px;
 				transition: background-color 0.3s;
-				user-select: none;
 				-webkit-user-select: none;
+				user-select: none;
 			}
 
 			button:hover, button:active {
@@ -156,9 +155,7 @@
 
 			#spectrogramPreviewCanvas {
 				max-height: 300px;
-				image-rendering: -moz-crisp-edges;
-				image-rendering: pixelated;
-				image-rendering: crisp-edges;
+				image-rendering: auto;
 			}
 
 			.preview {
@@ -315,9 +312,9 @@
 				get frequencySpan() { return Math.max(20, (this.sampleRate/2) - this.baseFrequency); }, // freq. interval (hz)
 				useDynamicRange: false, // dynamicRange disabled by default
 				dynamicRange: 24,  // (6–12 dB) more uniform audio (little variation. ideal for images with smooth tones)
-								   // (18–24 dB) balanced (natural dynamics. good for most cases)
-								   // (30–48 dB) high dynamic range (sharp contrast. useful for crisp black and white images)
-								   // (> 48 dB) extreme effect (may overemphasize small variations)
+                                   // (18–24 dB) balanced (natural dynamics. good for most cases)
+                                   // (30–48 dB) high dynamic range (sharp contrast. useful for crisp black and white images)
+                                   // (> 48 dB) extreme effect (may overemphasize small variations)
 				fftSize: 512       // preview spectrogram resolution
 			};
 
@@ -401,7 +398,7 @@
 							
 							// checks and resizes if needed
 							if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
-								console.warn(`Big image! (${img.width}x${img.height}). Resized to ${TARGET_WIDTH}x${TARGET_HEIGHT}...`);
+								//console.warn(`Big image! (${img.width}x${img.height}). Resized to ${TARGET_WIDTH}x${TARGET_HEIGHT}...`);
 								
 								// creates canvas for resizing
 								const tempCanvas = document.createElement('canvas');
@@ -723,7 +720,7 @@
 			function getColor(intensity) {
 				const colormap = [
 					// deep blues/blacks (dark start)
-					[0, 0, 3],       s// Near-black (cool blue undertone)
+					[0, 0, 3],       // Near-black (cool blue undertone)
 					
 					// purple transition (low intensities)
 					[20, 11, 53],    // Dark purple
